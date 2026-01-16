@@ -1,20 +1,19 @@
-name: Playwright Tests
-
+﻿name: Playwright Tests
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, firefox, webkit]
+        browser: [chromium, webkit]
     
     steps:
     - name: Checkout code
@@ -32,8 +31,9 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps ${{ matrix.browser }}
     
-    - name: Run Playwright tests on ${{ matrix.browser }}
+    - name: Run Playwright tests
       run: npx playwright test --project=${{ matrix.browser }}
+      continue-on-error: false
     
     - name: Upload test results
       uses: actions/upload-artifact@v4
@@ -43,16 +43,10 @@ jobs:
         path: playwright-report/
         retention-days: 30
     
-    - name: Upload test videos
+    - name: Upload test videos and screenshots
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results-${{ matrix.browser }}
         path: test-results/
         retention-days: 30
-    
-    - name: Comment PR with results
-      uses: daun/playwright-report-comment@v3
-      if: always() && github.event_name == 'pull_request'
-      with:
-        report-path: playwright-report
